@@ -100,9 +100,9 @@ export default async (req: NextApiRequest, res: NextApiResponse<GetThumbnailResp
     stream = await createReadStreamAsync(cachePath);
     cacheStats = await stat(cachePath);
   } catch {
-    stream?.close();
-
     try {
+      stream?.close();
+
       // cache does not exist, so write a new one
       await mkdir(parse(cachePath).dir, {
         recursive: true,

@@ -32,6 +32,6 @@ export function createWriteStreamAsync(path: PathLike, options?: Parameters<type
 
 export function pipeAsync(from: NodeJS.ReadableStream, to: NodeJS.WritableStream, options?: { end?: boolean }) {
   return new Promise<void>((resolve, reject) => {
-    from.pipe(to, options).once("finish", resolve).once("error", reject);
+    from.once("error", reject).pipe(to, options).once("finish", resolve).once("error", reject);
   });
 }
