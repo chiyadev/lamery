@@ -1,5 +1,5 @@
 {
-  "name": "with-typescript",
+  "name": "lamery",
   "version": "1.0.0",
   "scripts": {
     "dev": "next",
@@ -8,15 +8,50 @@
     "type-check": "tsc"
   },
   "dependencies": {
+    "@chakra-ui/react": "^1.3.3",
+    "@emotion/react": "^11.1.5",
+    "@emotion/styled": "^11.1.5",
+    "@ffmpeg-installer/ffmpeg": "^1.0.20",
+    "@ffprobe-installer/ffprobe": "^1.1.0",
+    "@types/archiver": "^5.1.0",
+    "@types/etag": "^1.8.0",
+    "@types/fluent-ffmpeg": "^2.1.16",
+    "@types/mime-types": "^2.1.0",
+    "@types/nprogress": "^0.2.0",
+    "@types/range-parser": "^1.2.3",
+    "@types/react-syntax-highlighter": "^13.5.0",
+    "@types/sharp": "^0.27.1",
+    "archiver": "^5.2.0",
+    "chokidar": "^3.5.1",
+    "etag": "^1.8.1",
+    "fdir": "^5.0.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "focus-visible": "^5.2.0",
+    "framer-motion": "^3.7.0",
+    "inter-ui": "^3.15.0",
+    "iso-639-2": "^2.0.0",
+    "mime-types": "^2.1.29",
+    "minisearch": "^3.0.2",
+    "natural-orderby": "^2.0.3",
     "next": "latest",
-    "react": "^16.12.0",
-    "react-dom": "^16.12.0"
+    "nprogress": "^0.2.0",
+    "plyr-react": "^3.0.8",
+    "prettier": "^2.2.1",
+    "range-parser": "^1.2.1",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-icons": "^4.2.0",
+    "react-markdown": "^5.0.3",
+    "react-syntax-highlighter": "^15.4.3",
+    "remark-gfm": "^1.0.0",
+    "sharp": "^0.27.2",
+    "tempy": "^1.0.0"
   },
   "devDependencies": {
-    "@types/node": "^12.12.21",
-    "@types/react": "^16.9.16",
-    "@types/react-dom": "^16.9.4",
-    "typescript": "4.0"
+    "@types/node": "^14.14.31",
+    "@types/react": "^17.0.2",
+    "@types/react-dom": "^17.0.1",
+    "typescript": "4.2.2"
   },
   "license": "MIT"
 }
