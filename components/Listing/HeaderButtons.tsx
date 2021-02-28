@@ -23,15 +23,17 @@ const HeaderButtons = ({ directory }: { directory: DirectoryItem }) => {
         />
       </Tooltip>
 
-      <Tooltip label="Download all">
-        <IconButton
-          as="a"
-          aria-label="Download"
-          icon={<Icon as={FaDownload} />}
-          variant="ghost"
-          href={`/api/archive${directory.path}`}
-        />
-      </Tooltip>
+      {directory.path !== "/" && (
+        <Tooltip label="Download all">
+          <IconButton
+            as="a"
+            aria-label="Download"
+            icon={<Icon as={FaDownload} />}
+            variant="ghost"
+            href={`/api/archive${directory.path}`}
+          />
+        </Tooltip>
+      )}
     </>
   );
 };

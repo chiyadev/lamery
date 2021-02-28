@@ -17,7 +17,7 @@ const Layout = ({ children, title = [] }: { children?: ReactNode; title?: (strin
         <chakra.div color="gray.500" fontSize="sm">
           <span>
             <span>powered by </span>
-            <Link href="https://github.com/chiyadev/lamery" isExternal>
+            <Link href="https://github.com/chiyadev/lamery" isExternal color="blue.300">
               lamery
             </Link>
           </span>
