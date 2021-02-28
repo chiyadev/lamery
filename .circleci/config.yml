@@ -1,0 +1,24 @@
+version: 2.1
+
+executors:
+  default:
+    machine: true
+    environment:
+      DOCKER_IMAGE: r.chiya.dev/lamery
+
+jobs:
+  deploy:
+    executor: default
+    steps:
+      - checkout
+      - run: docker build -t $DOCKER_IMAGE -f Dockerfile .
+      - run: echo "$DOCKER_PASSWORD" | docker login $DOCKER_REGISTRY -u "$DOCKER_USERNAME" --password-stdin
+      - run: docker push $DOCKER_IMAGE
+
+workflows:
+  version: 2
+  default:
+    jobs:
+      - deploy:
+          context:
+            - do-registry
