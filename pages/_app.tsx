@@ -43,10 +43,10 @@ function App({ Component, pageProps }: AppProps) {
         <meta charSet="utf-8" />
 
         <meta name="viewport" content="initial-scale=1.0, width=device-width" />
-        <meta name="theme-color" content="#2e313d" />
+        <meta name="theme-color" content="#63B3ED" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-TileColor" content="#2e313d" />
+        <meta name="msapplication-TileColor" content="#63B3ED" />
 
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />

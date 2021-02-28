@@ -1,0 +1,16 @@
+{
+  "name": "lamery",
+  "short_name": "lamery",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#63B3ED",
+  "theme_color": "#63B3ED",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ]
+}
