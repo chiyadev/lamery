@@ -1,8 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { parse } from "path";
-import { getFileInfo } from "../../../utils/storage";
-import { Stats } from "fs";
-import getEtag from "etag";
+import { getFileWeakHash, getStorageIndex } from "../../../utils/storage";
 import { getEmbeddedSubtitleStream, getSubtitleStream, SubtitleExtensions } from "../../../utils/subtitle";
 import { getFileType } from "../../../utils/file";
 import { FfmpegCommand } from "fluent-ffmpeg";
@@ -14,7 +11,7 @@ export type GetSubtitleResponse = {
 };
 
 export default async (req: NextApiRequest, res: NextApiResponse<GetSubtitleResponse>) => {
-  // only allow GET
+  // only accept GET
   if (req.method !== "GET") {
     res.status(405).json({
       type: "failure",
@@ -25,8 +22,7 @@ export default async (req: NextApiRequest, res: NextApiResponse<GetSubtitleRespo
   }
 
   const { path, stream } = req.query;
-  const pathStr = `/${(Array.isArray(path) ? path.join("/") : path) || ""}`;
-  const pathObj = parse(pathStr);
+  const pathStr = (Array.isArray(path) ? path.join("/") : path) || "";
   const streamIndex = parseInt((Array.isArray(stream) ? stream[0] : stream) || "0");
 
   if (isNaN(streamIndex)) {
@@ -38,48 +34,25 @@ export default async (req: NextApiRequest, res: NextApiResponse<GetSubtitleRespo
     return;
   }
 
-  // stat file first to retrieve metadata
-  let stats: Stats;
+  const storage = await getStorageIndex();
+  const file = storage.getFile(pathStr);
 
-  try {
-    stats = await getFileInfo(pathStr);
+  if (!file) {
+    res.status(404).json({
+      type: "failure",
+      message: `No such file: ${pathStr}`,
+    });
 
-    if (!stats.isFile()) {
-      res.status(404).json({
-        type: "failure",
-        message: `Not a file: ${pathStr}`,
-      });
-
-      return;
-    }
-  } catch (e) {
-    switch (e.code) {
-      case "ENOENT":
-        res.status(404).json({
-          type: "failure",
-          message: `No such file: ${pathStr}`,
-        });
-
-        return;
-
-      default:
-        res.status(500).json({
-          type: "failure",
-          message: e.message,
-        });
-
-        return;
-    }
+    return;
   }
 
-  // compute cache-related fields
-  const lastModified = stats.mtime.toUTCString();
-  const etag = getEtag(stats);
+  const lastModified = new Date(file.mtime).toUTCString();
+  const etag = `W/"${getFileWeakHash(file)}"`;
 
+  // handle cache headers
   const ifModifiedSince = req.headers["if-modified-since"];
   const ifNoneMatch = req.headers["if-none-match"];
 
-  // if-none-match has precedence
   if (ifNoneMatch === etag || (!ifNoneMatch && ifModifiedSince === lastModified)) {
     res.status(304).end();
     return;
@@ -89,18 +62,23 @@ export default async (req: NextApiRequest, res: NextApiResponse<GetSubtitleRespo
 
   try {
     // if path points to a subtitle file, convert it to webvtt
-    if (SubtitleExtensions.includes(pathObj.ext)) {
-      command = await getSubtitleStream(pathStr, "webvtt");
+    if (SubtitleExtensions.includes(file.ext)) {
+      command = await getSubtitleStream(file.path, "webvtt");
     }
 
     // if path points to a video file, read embedded subtitle as webvtt
-    else if (getFileType(pathObj.ext) === "video") {
-      command = await getEmbeddedSubtitleStream(pathStr, "webvtt", streamIndex);
+    else if (getFileType(file.ext) === "video") {
+      command = await getEmbeddedSubtitleStream(file.path, "webvtt", streamIndex);
     }
 
     //
     else {
-      throw Error(`Unsupported subtitle file: ${pathStr}`);
+      res.status(400).json({
+        type: "failure",
+        message: `Unsupported subtitle file: ${pathStr}`,
+      });
+
+      return;
     }
 
     await pipeFfmpeg(command, res, {

@@ -1,6 +1,6 @@
 import React, { memo, ReactNode, useState } from "react";
 import { chakra, Popover, PopoverContent, PopoverTrigger } from "@chakra-ui/react";
-import { FileItem } from "../../utils/storage";
+import { StorageFile } from "../../utils/storage";
 import { getFileType } from "../../utils/file";
 import { encodeURIPath } from "../../utils/http";
 
@@ -10,7 +10,7 @@ const FileItemPreviewPopover = ({
   children,
 }: {
   visible: boolean;
-  file: FileItem;
+  file: StorageFile;
   children?: ReactNode;
 }) => {
   const [loaded, setLoaded] = useState(false);

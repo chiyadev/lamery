@@ -1,6 +1,6 @@
 import sharp from "sharp";
-import { getFileAsStream, getStoragePath } from "./storage";
-import { createWriteStreamAsync, pipeAsync } from "./stream";
+import { storagePathToAbsolute } from "./storage";
+import { createReadStreamAsync, createWriteStreamAsync, pipeAsync } from "./stream";
 import { execFfmpeg, ffprobeAsync } from "./ffmpeg";
 import ffmpeg from "fluent-ffmpeg";
 
@@ -21,7 +21,7 @@ export function createImageThumbnailTransform(format: ThumbnailFormat) {
 
 export async function generateImageThumbnail(path: string, destination: string, format: ThumbnailFormat) {
   const transform = createImageThumbnailTransform(format);
-  const src = await getFileAsStream(path);
+  const src = await createReadStreamAsync(storagePathToAbsolute(path));
   const dest = await createWriteStreamAsync(destination);
 
   await pipeAsync(src.pipe(transform), dest);
@@ -31,7 +31,7 @@ export async function generateVideoThumbnail(path: string, destination: string, 
   const {
     streams,
     format: { duration },
-  } = await ffprobeAsync(getStoragePath(path));
+  } = await ffprobeAsync(storagePathToAbsolute(path));
 
   let { width, height } = streams.find((stream) => stream.codec_type === "video") || {};
 
@@ -59,7 +59,7 @@ export async function generateVideoThumbnail(path: string, destination: string, 
   }
 
   await execFfmpeg(
-    ffmpeg(getStoragePath(path))
+    ffmpeg(storagePathToAbsolute(path))
       .seekInput(Math.min(duration / 2, 120)) // max 2 minutes
       .noAudio()
       .format(ffFormat)

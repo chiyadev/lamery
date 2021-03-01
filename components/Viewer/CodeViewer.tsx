@@ -2,7 +2,7 @@ import { chakra } from "@chakra-ui/react";
 import React, { memo } from "react";
 import { PrismAsync as SyntaxHighlighter } from "react-syntax-highlighter";
 import { ghcolors } from "react-syntax-highlighter/dist/cjs/styles/prism";
-import { FileItem } from "../../utils/storage";
+import { StorageFile } from "../../utils/storage";
 import { getFileHighlighter } from "../../utils/file";
 
 export type TextViewerData = {
@@ -12,7 +12,7 @@ export type TextViewerData = {
 
 export const MaxTextViewerSize = 1024 * 1024;
 
-const CodeViewer = ({ file, viewer }: { file: FileItem; viewer: TextViewerData }) => {
+const CodeViewer = ({ file, viewer }: { file: StorageFile; viewer: TextViewerData }) => {
   return (
     <chakra.div fontSize="lg">
       <SyntaxHighlighter

@@ -1,10 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { getFileInfo } from "../../../utils/storage";
+import { getFileWeakHash, getStorageIndex } from "../../../utils/storage";
 import { ReadStream, Stats } from "fs";
 import { mkdir, rename, stat } from "fs/promises";
-import getEtag from "etag";
 import { join, parse } from "path";
-import { file, root } from "tempy";
+import { file as tempFile, root } from "tempy";
 import { getFileType } from "../../../utils/file";
 import { generateImageThumbnail, generateVideoThumbnail, ThumbnailFormat } from "../../../utils/thumbnail";
 import { createReadStreamAsync, pipeAsync } from "../../../utils/stream";
@@ -15,7 +14,7 @@ export type GetThumbnailResponse = {
 };
 
 export default async (req: NextApiRequest, res: NextApiResponse<GetThumbnailResponse>) => {
-  // only allow GET
+  // only accept GET
   if (req.method !== "GET") {
     res.status(405).json({
       type: "failure",
@@ -26,8 +25,7 @@ export default async (req: NextApiRequest, res: NextApiResponse<GetThumbnailResp
   }
 
   const { path, format } = req.query;
-  const pathStr = `/${(Array.isArray(path) ? path.join("/") : path) || ""}`;
-  const pathObj = parse(pathStr);
+  const pathStr = (Array.isArray(path) ? path.join("/") : path) || "";
   const formatStr = ((Array.isArray(format) ? format[0] : format) || "jpeg") as ThumbnailFormat;
 
   switch (formatStr) {
@@ -44,54 +42,33 @@ export default async (req: NextApiRequest, res: NextApiResponse<GetThumbnailResp
       return;
   }
 
-  // stat file first to retrieve metadata
-  let stats: Stats;
+  const storage = await getStorageIndex();
+  const file = storage.getFile(pathStr);
 
-  try {
-    stats = await getFileInfo(pathStr);
+  if (!file) {
+    res.status(404).json({
+      type: "failure",
+      message: `No such file: ${pathStr}`,
+    });
 
-    if (!stats.isFile()) {
-      res.status(404).json({
-        type: "failure",
-        message: `Not a file: ${pathStr}`,
-      });
-
-      return;
-    }
-  } catch (e) {
-    switch (e.code) {
-      case "ENOENT":
-        res.status(404).json({
-          type: "failure",
-          message: `No such file: ${pathStr}`,
-        });
-
-        return;
-
-      default:
-        res.status(500).json({
-          type: "failure",
-          message: e.message,
-        });
-
-        return;
-    }
+    return;
   }
 
-  // compute cache-related fields
-  const lastModified = stats.mtime.toUTCString();
-  const etag = getEtag(stats);
+  const lastModified = new Date(file.mtime).toUTCString();
+  const hash = getFileWeakHash(file);
+  const etag = `W/"${hash}"`;
 
+  // handle cache headers
   const ifModifiedSince = req.headers["if-modified-since"];
   const ifNoneMatch = req.headers["if-none-match"];
 
-  // if-none-match has precedence
   if (ifNoneMatch === etag || (!ifNoneMatch && ifModifiedSince === lastModified)) {
     res.status(304).end();
     return;
   }
 
-  const cachePath = join(root, "lamery", "thumbs", formatStr, stats.mtimeMs.toString(), pathStr);
+  const cachePath = join(root, "lamery", "thumbs", hash, formatStr);
+
   let cacheStats: Stats;
   let stream: ReadStream | undefined;
 
@@ -109,23 +86,23 @@ export default async (req: NextApiRequest, res: NextApiResponse<GetThumbnailResp
       });
 
       // we will write to a temporary place then move it to cache path on success
-      const tempPath = file({
-        extension: pathObj.ext,
+      const tempPath = tempFile({
+        extension: file.ext,
       });
 
-      switch (getFileType(pathObj.ext)) {
+      switch (getFileType(file.ext)) {
         case "image":
-          await generateImageThumbnail(pathStr, tempPath, formatStr);
+          await generateImageThumbnail(file.path, tempPath, formatStr);
           break;
 
         case "video":
-          await generateVideoThumbnail(pathStr, tempPath, formatStr);
+          await generateVideoThumbnail(file.path, tempPath, formatStr);
           break;
 
         default:
           res.status(400).json({
             type: "failure",
-            message: `Cannot generate thumbnail for file: ${pathStr}`,
+            message: `Could generate thumbnail for file: ${pathStr}`,
           });
 
           return;

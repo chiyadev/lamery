@@ -1,10 +1,9 @@
 import Layout from "../../components/Layout";
 import { GetServerSideProps } from "next";
-import { DirectoryItem, FileItem, getFileAsString, getFileInfo, listFiles, StorageItem } from "../../utils/storage";
+import { getStorageIndex, normalizePath, StorageDirectory, StorageEntry, StorageFile } from "../../utils/storage";
 import FileItemDisplay from "../../components/Listing/FileItemDisplay";
 import DirectoryItemDisplay from "../../components/Listing/DirectoryItemDisplay";
 import ListingContainer from "../../components/Listing/ListingContainer";
-import { parse } from "path";
 import BackItemDisplay from "../../components/Listing/BackItemDisplay";
 import React from "react";
 import { chakra, Heading, Link, VStack } from "@chakra-ui/react";
@@ -15,100 +14,83 @@ import ReadmeDisplay from "../../components/Listing/ReadmeDisplay";
 import Header from "../../components/Header";
 import HeaderButtons from "../../components/Listing/HeaderButtons";
 import { encodeURIPath } from "../../utils/http";
+import { compare } from "natural-orderby";
 
 type Props = {
-  directory: DirectoryItem;
-  parent: string;
-  results: StorageItem[];
+  directory: StorageDirectory;
+  entries: StorageEntry[];
   readme: null | ReadmeData;
 };
 
 type ReadmeData = {
-  file: FileItem;
+  file: StorageFile;
   viewer: TextViewerData;
 };
 
-const readmeFilenames = ["readme", "index"];
+const readmeNames = ["readme", "index"];
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ query: { path } }) => {
-  const pathStr = `/${(Array.isArray(path) ? path.join("/") : path) || ""}`;
-  const pathObj = parse(pathStr);
+  const pathStr = normalizePath(`/${(Array.isArray(path) ? path.join("/") : path) || ""}`);
+  const storage = await getStorageIndex();
 
-  try {
-    const stats = await getFileInfo(pathStr);
+  const directory = storage.getDirectory(pathStr);
 
-    if (!stats.isDirectory()) {
-      return {
-        redirect: {
-          permanent: false,
-          destination: `/files${encodeURIPath(pathStr)}`,
-        },
-      };
-    }
-  } catch (e) {
-    switch (e.code) {
-      case "ENOENT":
-        return {
-          redirect: {
-            permanent: false,
-            destination: `/files${encodeURIPath(pathStr)}`,
-          },
-        };
-
-      default:
-        // ignored
-        break;
-    }
+  if (!directory) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/files${encodeURIPath(pathStr)}`,
+      },
+    };
   }
 
-  const results = await listFiles(pathStr);
+  const comparer = compare();
+  const entries = storage
+    .filterEntries(directory.path + "/")
+    .filter((entry) => entry !== directory)
+    .sort((a, b) => {
+      const type = a.type.localeCompare(b.type);
+      if (type) return type;
 
-  let readme: null | ReadmeData = null;
+      return comparer(a.name, b.name);
+    });
 
-  for (const item of results) {
-    if (item.type === "file") {
-      const { name, ext } = parse(item.name);
+  let readme: ReadmeData | null = null;
+  const readmeEntry = entries.find(
+    (entry) =>
+      entry.type === "file" &&
+      readmeNames.includes(entry.name.substr(0, entry.name.length - entry.ext.length).toLowerCase()) &&
+      getFileType(entry.ext) === "text" &&
+      entry.size <= MaxTextViewerSize
+  );
 
-      if (
-        readmeFilenames.includes(name.toLowerCase()) &&
-        getFileType(ext) === "text" &&
-        item.size <= MaxTextViewerSize
-      ) {
-        readme = {
-          file: item,
-          viewer: {
-            type: "text",
-            content: await getFileAsString(item.path),
-          },
-        };
-
-        break;
-      }
-    }
+  if (readmeEntry) {
+    readme = {
+      file: readmeEntry as StorageFile,
+      viewer: {
+        type: "text",
+        content: await storage.getFileAsString(readmeEntry.path),
+      },
+    };
   }
 
   return {
     props: {
-      directory: {
-        type: "directory",
-        path: pathStr,
-        name: pathObj.base,
-      },
-      parent: pathObj.dir,
-      results,
+      directory,
+      entries,
       readme,
     },
   };
 };
 
-const ListPage = ({ directory, parent, results, readme }: Props) => {
+const ListPage = ({ directory, entries, readme }: Props) => {
   return (
     <Layout title={[directory.name]}>
       <Header buttons={<HeaderButtons directory={directory} />}>
         <VStack align="stretch" spacing={0}>
-          {directory.name && (
+          {directory.path !== "/" && (
             <chakra.div fontSize="sm" color="gray.500">
-              <PathBreadcrumbs value={parent} />
+              <PathBreadcrumbs value={directory.parent} />
             </chakra.div>
           )}
 
@@ -121,9 +103,9 @@ const ListPage = ({ directory, parent, results, readme }: Props) => {
       </Header>
 
       <ListingContainer>
-        {directory.name && <BackItemDisplay path={parent} />}
+        {directory.name && <BackItemDisplay path={directory.parent} />}
 
-        {results.map((item) => {
+        {entries.map((item) => {
           switch (item.type) {
             case "file":
               return <FileItemDisplay key={item.path} file={item} />;

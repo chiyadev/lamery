@@ -1,10 +1,10 @@
-import { FileItem } from "../../utils/storage";
+import { StorageFile } from "../../utils/storage";
 import React, { memo } from "react";
 import { Button, Icon } from "@chakra-ui/react";
 import { FaDownload } from "react-icons/fa";
 import { encodeURIPath } from "../../utils/http";
 
-const DownloadFallback = ({ file }: { file: FileItem }) => {
+const DownloadFallback = ({ file }: { file: StorageFile }) => {
   return (
     <Button
       as="a"

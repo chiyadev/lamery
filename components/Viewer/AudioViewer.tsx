@@ -1,10 +1,10 @@
-import { FileItem } from "../../utils/storage";
+import { StorageFile } from "../../utils/storage";
 import { memo, useEffect, useRef } from "react";
 import Plyr, { HTMLPlyrVideoElement } from "plyr-react";
 import { Router } from "next/router";
 import { encodeURIPath } from "../../utils/http";
 
-const AudioViewer = ({ file }: { file: FileItem }) => {
+const AudioViewer = ({ file }: { file: StorageFile }) => {
   const ref = useRef<HTMLPlyrVideoElement>(null);
 
   useEffect(() => {

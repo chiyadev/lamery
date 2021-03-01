@@ -3,8 +3,7 @@ import { GetServerSideProps } from "next";
 import React from "react";
 import { Heading, Link, VStack } from "@chakra-ui/react";
 import Header from "../components/Header";
-import { getStorageIndex } from "../utils/storageSearch";
-import { DirectoryItem, FileItem } from "../utils/storage";
+import { getStorageIndex, StorageFile } from "../utils/storage";
 import { performance } from "perf_hooks";
 import LargeFileList from "../components/Statistics/LargeFileList";
 import CommonExtensionsList, { ExtensionInfo } from "../components/Statistics/CommonExtensionsList";
@@ -12,7 +11,7 @@ import prettyBytes from "next/dist/lib/pretty-bytes";
 
 type Props = {
   commonExtensions: ExtensionInfo[];
-  largeFiles: FileItem[];
+  largeFiles: StorageFile[];
   total: {
     files: number;
     directories: number;
@@ -26,14 +25,10 @@ export const MaxLargeFileCount = 200;
 
 export const getServerSideProps: GetServerSideProps<Props> = async () => {
   const start = performance.now();
-
-  const index = await getStorageIndex();
-  const items = Array.from(index.store.values());
-  const files = items.filter((item) => item.type === "file") as FileItem[];
-  const directories = items.filter((item) => item.type === "directory") as DirectoryItem[];
+  const storage = await getStorageIndex();
 
   const commonExtensions: ExtensionInfo[] = Object.values(
-    files.reduce((a, b) => {
+    storage.files.reduce((a, b) => {
       let entry = a[b.ext];
 
       if (!entry) {
@@ -53,18 +48,18 @@ export const getServerSideProps: GetServerSideProps<Props> = async () => {
     .sort((a, b) => b.count - a.count)
     .slice(0, MaxExtensionCount);
 
-  const largeFiles = files.sort((a, b) => b.size - a.size).slice(0, MaxLargeFileCount);
+  const largeFiles = storage.files.sort((a, b) => b.size - a.size).slice(0, MaxLargeFileCount);
 
   return {
     props: {
       commonExtensions,
       largeFiles,
       total: {
-        files: files.length,
-        directories: directories.length,
+        files: storage.files.length,
+        directories: storage.directories.length,
       },
       elapsed: performance.now() - start,
-      aggregateSize: files.reduce((a, b) => a + b.size, 0),
+      aggregateSize: storage.files.reduce((a, b) => a + b.size, 0),
     },
   };
 };
@@ -96,7 +91,7 @@ const ListPage = ({ commonExtensions, largeFiles, total, elapsed, aggregateSize 
       </VStack>
 
       {!!commonExtensions.length && <CommonExtensionsList items={commonExtensions} />}
-      {!!largeFiles.length && <LargeFileList items={largeFiles} />}
+      {!!largeFiles.length && <LargeFileList files={largeFiles} />}
     </Layout>
   );
 };

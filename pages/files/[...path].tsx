@@ -1,10 +1,9 @@
 import Layout from "../../components/Layout";
 import { GetServerSideProps } from "next";
-import { FileItem, getFileAsString, getFileInfo } from "../../utils/storage";
+import { getStorageIndex, normalizePath, StorageFile } from "../../utils/storage";
 import { parse } from "path";
 import React from "react";
 import { Button, chakra, Code, Heading, Icon, Link, VStack } from "@chakra-ui/react";
-import { Stats } from "fs";
 import PathBreadcrumbs from "../../components/Listing/PathBreadcrumbs";
 import FileViewer, { ViewerData } from "../../components/Viewer/FileViewer";
 import { FaChevronLeft } from "react-icons/fa";
@@ -32,40 +31,37 @@ type Props =
 
 type SuccessProps = {
   type: "success";
-  file: FileItem;
-  parent: string;
+  file: StorageFile;
   viewer: ViewerData | null;
 };
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ query: { path }, res }) => {
-  const pathStr = `/${(Array.isArray(path) ? path.join("/") : path) || ""}`;
-  const pathObj = parse(pathStr);
+  const pathStr = normalizePath(`/${(Array.isArray(path) ? path.join("/") : path) || ""}`);
+  const storage = await getStorageIndex();
 
-  let stats: Stats;
+  const file = storage.getFile(pathStr);
   let viewer: SuccessProps["viewer"] = null;
 
+  if (!file) {
+    res.statusCode = 404;
+
+    return {
+      props: {
+        type: "notFound",
+        path: pathStr,
+        parent: parse(pathStr).dir,
+      },
+    };
+  }
+
   try {
-    stats = await getFileInfo(pathStr);
-
-    if (!stats.isFile()) {
-      res.statusCode = 404;
-
-      return {
-        props: {
-          type: "notFound",
-          path: pathStr,
-          parent: pathObj.dir,
-        },
-      };
-    }
-
-    switch (getFileType(pathObj.ext)) {
+    switch (getFileType(file.ext)) {
       case "text":
       case "code":
-        if (stats.size <= MaxTextViewerSize) {
+        if (file.size <= MaxTextViewerSize) {
           viewer = {
             type: "text",
-            content: await getFileAsString(pathStr),
+            content: await storage.getFileAsString(file.path),
           };
         }
 
@@ -74,7 +70,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query: { p
       case "video":
         viewer = {
           type: "video",
-          subtitles: await getSubtitleList(pathStr),
+          subtitles: await getSubtitleList(file.path),
         };
 
         break;
@@ -88,7 +84,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query: { p
           props: {
             type: "notFound",
             path: pathStr,
-            parent: pathObj.dir,
+            parent: parse(pathStr).dir,
           },
         };
 
@@ -99,7 +95,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query: { p
           props: {
             type: "failure",
             message: e.message,
-            parent: pathObj.dir,
+            parent: parse(pathStr).dir,
           },
         };
     }
@@ -108,16 +104,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query: { p
   return {
     props: {
       type: "success",
-      file: {
-        type: "file",
-        name: pathObj.base,
-        path: pathStr,
-        ext: pathObj.ext,
-        size: stats.size,
-        mtime: stats.mtimeMs,
-      },
+      file,
       viewer,
-      parent: pathObj.dir,
     },
   };
 };
@@ -156,13 +144,13 @@ const FilePage = (props: Props) => {
   }
 };
 
-const Content = ({ file, parent, viewer }: SuccessProps) => {
+const Content = ({ file, viewer }: SuccessProps) => {
   return (
     <Layout title={[file.name]}>
       <Header buttons={<HeaderButtons file={file} />}>
         <VStack align="stretch" spacing={0}>
           <chakra.div fontSize="sm" color="gray.500">
-            <PathBreadcrumbs value={parent} />
+            <PathBreadcrumbs value={file.parent} />
           </chakra.div>
 
           <Heading size="md" isTruncated>

@@ -25,6 +25,10 @@ export class MemorySearch<T extends Record<string, any>> {
     this.idField = options.idField || "id";
   }
 
+  get(id: string) {
+    return this.store.get(id);
+  }
+
   index(doc: T) {
     const id = doc[this.idField];
     const oldDoc = this.store.get(id);
@@ -43,6 +47,8 @@ export class MemorySearch<T extends Record<string, any>> {
     if (doc) {
       this.mini.remove(doc);
       this.store.delete(id);
+
+      return doc;
     }
   }
 

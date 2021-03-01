@@ -1,5 +1,5 @@
 import React, { memo } from "react";
-import { StorageItem } from "../../utils/storage";
+import { StorageEntry } from "../../utils/storage";
 import { chakra, Heading, Link, VStack } from "@chakra-ui/react";
 import FileItemDisplay from "../Listing/FileItemDisplay";
 import DirectoryItemDisplay from "../Listing/DirectoryItemDisplay";
@@ -9,10 +9,11 @@ import ListingContainer from "../Listing/ListingContainer";
 import { encodeURIPath } from "../../utils/http";
 
 export type GroupDisplayData = {
-  parent: string;
   path: string;
+  parent: string;
+  depth: number;
   name: string;
-  items: StorageItem[];
+  entries: StorageEntry[];
   score: 0;
 };
 
@@ -22,7 +23,7 @@ const GroupDisplay = ({ group, searchPath }: { group: GroupDisplayData; searchPa
       header={
         group.path !== searchPath && (
           <VStack align="start" spacing={0}>
-            {group.name && group.parent !== searchPath && (
+            {group.parent !== searchPath && (
               <chakra.div fontSize="xs" color="gray.500">
                 <PathBreadcrumbs value={group.parent} />
               </chakra.div>
@@ -37,13 +38,13 @@ const GroupDisplay = ({ group, searchPath }: { group: GroupDisplayData; searchPa
         )
       }
     >
-      {group.items.map((item) => {
-        switch (item.type) {
+      {group.entries.map((entry) => {
+        switch (entry.type) {
           case "file":
-            return <FileItemDisplay key={item.path} file={item} />;
+            return <FileItemDisplay key={entry.path} file={entry} />;
 
           case "directory":
-            return <DirectoryItemDisplay key={item.path} directory={item} />;
+            return <DirectoryItemDisplay key={entry.path} directory={entry} />;
         }
       })}
     </ListingContainer>

@@ -1,6 +1,6 @@
 import { chakra, HStack, Icon, Link } from "@chakra-ui/react";
 import React, { memo, ReactNode, useState } from "react";
-import { FileItem } from "../../utils/storage";
+import { StorageFile } from "../../utils/storage";
 import {
   FaRegFile,
   FaRegFileAlt,
@@ -15,12 +15,13 @@ import {
   FaRegFileWord,
 } from "react-icons/fa";
 import NextLink from "next/link";
-import { FileType, getFileType } from "../../utils/file";
+import { getFileType } from "../../utils/file";
 import FileItemPreviewPopover from "./FileItemPreviewPopover";
 import { encodeURIPath } from "../../utils/http";
+import prettyBytes from "next/dist/lib/pretty-bytes";
 
-export function getFileIcon(type: FileType) {
-  switch (type) {
+export function getFileIcon(file: Pick<StorageFile, "ext">) {
+  switch (getFileType(file.ext)) {
     case "word":
       return FaRegFileWord;
 
@@ -56,13 +57,13 @@ export function getFileIcon(type: FileType) {
   }
 }
 
-const FileItemDisplay = ({ file, info }: { file: FileItem; info?: ReactNode }) => {
+const FileItemDisplay = ({ file, info }: { file: StorageFile; info?: ReactNode }) => {
   const [preview, setPreview] = useState(false);
 
   return (
     <FileItemPreviewPopover visible={preview} file={file}>
       <HStack spacing={2}>
-        <Icon as={getFileIcon(getFileType(file.ext))} color="gray.500" />
+        <Icon as={getFileIcon(file)} color="gray.500" />
 
         <chakra.div flex={1} isTruncated minW={0}>
           <NextLink href={`/files${encodeURIPath(file.path)}`} passHref>
@@ -76,7 +77,11 @@ const FileItemDisplay = ({ file, info }: { file: FileItem; info?: ReactNode }) =
           </NextLink>
         </chakra.div>
 
-        {info}
+        {info || (
+          <chakra.div fontSize="xs" color="gray.500">
+            {prettyBytes(file.size)}
+          </chakra.div>
+        )}
       </HStack>
     </FileItemPreviewPopover>
   );

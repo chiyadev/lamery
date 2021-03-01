@@ -1,13 +1,13 @@
-import { FileItem } from "../../utils/storage";
+import { StorageFile } from "../../utils/storage";
 import { memo, useEffect, useRef } from "react";
 import Plyr, { HTMLPlyrVideoElement } from "plyr-react";
 import { Router } from "next/router";
-import { SubtitleStreamInfo } from "../../utils/subtitle";
+import { SubtitleInfo } from "../../utils/subtitle";
 import { encodeURIPath } from "../../utils/http";
 
 export type VideoViewerData = {
   type: "video";
-  subtitles: SubtitleStreamInfo[];
+  subtitles: SubtitleInfo[];
 };
 
 type PlayerState = Partial<{
@@ -27,14 +27,14 @@ function setPlayerState(key: string, state: PlayerState) {
   window.localStorage.setItem(`plyr_state_${key}`, JSON.stringify(state));
 }
 
-const VideoViewer = ({ file, viewer }: { file: FileItem; viewer: VideoViewerData }) => {
+const VideoViewer = ({ file, viewer }: { file: StorageFile; viewer: VideoViewerData }) => {
   const ref = useRef<HTMLPlyrVideoElement>(null);
 
   useEffect(() => {
     const plyr = ref.current?.plyr;
     if (!plyr) return;
 
-    const stateKey = `${file.mtime}_${file.path.replace(/[\/\\]/g, "_")}`;
+    const stateKey = `${file.mtime}_${file.path.replace("/", "_")}`;
 
     plyr.once("playing", () => {
       const state = getPlayerState(stateKey);

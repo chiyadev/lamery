@@ -1,10 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { getFileAsStream, getFileInfo } from "../../../utils/storage";
-import { Stats } from "fs";
+import { getFileWeakHash, getStorageIndex } from "../../../utils/storage";
 import { contentType } from "mime-types";
 import parseRange from "range-parser";
-import getEtag from "etag";
-import { parse } from "path";
 import { pipeAsync } from "../../../utils/stream";
 
 export type GetFileResponse = {
@@ -13,7 +10,7 @@ export type GetFileResponse = {
 };
 
 export default async (req: NextApiRequest, res: NextApiResponse<GetFileResponse>) => {
-  // only allow GET
+  // only accept GET
   if (req.method !== "GET") {
     res.status(405).json({
       type: "failure",
@@ -24,51 +21,27 @@ export default async (req: NextApiRequest, res: NextApiResponse<GetFileResponse>
   }
 
   const { path, attach } = req.query;
-  const pathStr = `/${(Array.isArray(path) ? path.join("/") : path) || ""}`;
-  const pathObj = parse(pathStr);
+  const pathStr = (Array.isArray(path) ? path.join("/") : path) || "";
   const attachFlag = (Array.isArray(attach) ? attach[0] : attach) === "true";
 
-  // stat file first to retrieve metadata
-  let stats: Stats;
+  const storage = await getStorageIndex();
+  const file = storage.getFile(pathStr);
 
-  try {
-    stats = await getFileInfo(pathStr);
+  if (!file) {
+    res.status(404).json({
+      type: "failure",
+      message: `No such file: ${pathStr}`,
+    });
 
-    if (!stats.isFile()) {
-      res.status(404).json({
-        type: "failure",
-        message: `Not a file: ${pathStr}`,
-      });
-
-      return;
-    }
-  } catch (e) {
-    switch (e.code) {
-      case "ENOENT":
-        res.status(404).json({
-          type: "failure",
-          message: `No such file: ${pathStr}`,
-        });
-
-        return;
-
-      default:
-        res.status(500).json({
-          type: "failure",
-          message: e.message,
-        });
-
-        return;
-    }
+    return;
   }
 
-  // compute cache-related fields
-  const lastModified = stats.mtime.toUTCString();
-  const etag = getEtag(stats);
+  const lastModified = new Date(file.mtime).toUTCString();
+  const etag = `W/"${getFileWeakHash(file)}"`;
 
   // range handling
   let start = 0;
-  let end = stats.size - 1;
+  let end = file.size - 1;
   let partial = false;
 
   if (req.headers.range) {
@@ -76,7 +49,7 @@ export default async (req: NextApiRequest, res: NextApiResponse<GetFileResponse>
 
     if (!ifRange || ifRange === lastModified || ifRange === etag) {
       // parse range header
-      const result = parseRange(stats.size, req.headers.range, {
+      const result = parseRange(file.size, req.headers.range, {
         combine: true,
       });
 
@@ -90,7 +63,7 @@ export default async (req: NextApiRequest, res: NextApiResponse<GetFileResponse>
       }
 
       if (result === -1 || result.type !== "bytes" || result.length !== 1) {
-        res.setHeader("content-range", `bytes */${stats.size}`);
+        res.setHeader("content-range", `bytes */${file.size}`);
         res.status(416).json({
           type: "failure",
           message: `Specified range is not satisfiable.`,
@@ -103,10 +76,10 @@ export default async (req: NextApiRequest, res: NextApiResponse<GetFileResponse>
       partial = true;
     }
   } else {
+    // handle cache headers
     const ifModifiedSince = req.headers["if-modified-since"];
     const ifNoneMatch = req.headers["if-none-match"];
 
-    // if-none-match has precedence
     if (ifNoneMatch === etag || (!ifNoneMatch && ifModifiedSince === lastModified)) {
       res.status(304).end();
       return;
@@ -115,13 +88,13 @@ export default async (req: NextApiRequest, res: NextApiResponse<GetFileResponse>
 
   try {
     // open file as stream
-    const stream = await getFileAsStream(pathStr, [start, end]);
+    const stream = await storage.getFileAsStream(file.path, { start, end });
 
     try {
       if (partial) {
         res.statusCode = 206;
 
-        res.setHeader("content-range", `bytes ${start}-${end}/${stats.size}`);
+        res.setHeader("content-range", `bytes ${start}-${end}/${file.size}`);
         res.setHeader("vary", "range");
       } else {
         res.statusCode = 200;
@@ -129,7 +102,7 @@ export default async (req: NextApiRequest, res: NextApiResponse<GetFileResponse>
 
       res.setHeader("accept-ranges", "bytes");
       res.setHeader("cache-control", "private, max-age=0, must-revalidate");
-      res.setHeader("content-type", contentType(pathObj.ext) || "application/octet-stream");
+      res.setHeader("content-type", contentType(file.ext) || "application/octet-stream");
       res.setHeader("content-length", end - start + 1);
       res.setHeader("content-disposition", attachFlag ? "attachment" : "inline");
       res.setHeader("last-modified", lastModified);

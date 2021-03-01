@@ -1,4 +1,4 @@
-import { getStoragePath, listFiles } from "./storage";
+import { getStorageIndex, storagePathToAbsolute } from "./storage";
 import { ffprobeAsync } from "./ffmpeg";
 import { iso6392Map } from "./language";
 import ffmpeg from "fluent-ffmpeg";
@@ -7,7 +7,7 @@ import { parse } from "path";
 export const SubtitleExtensions = [".ass", ".ssa", ".srt", ".vtt"];
 
 export type SubtitleEncodeFormat = "webvtt";
-export type SubtitleStreamInfo =
+export type SubtitleInfo =
   | {
       type: "embedded";
       language: string;
@@ -19,11 +19,11 @@ export type SubtitleStreamInfo =
       path: string;
     };
 
-export async function getSubtitleList(path: string): Promise<SubtitleStreamInfo[]> {
-  const { streams } = await ffprobeAsync(getStoragePath(path));
-  const results: SubtitleStreamInfo[] = [];
+export async function getSubtitleList(path: string): Promise<SubtitleInfo[]> {
+  const { streams } = await ffprobeAsync(storagePathToAbsolute(path));
+  const results: SubtitleInfo[] = [];
 
-  // self contained subtitles
+  // find self contained subtitles
   let streamId = 0;
 
   for (const stream of streams) {
@@ -36,11 +36,13 @@ export async function getSubtitleList(path: string): Promise<SubtitleStreamInfo[
     }
   }
 
-  // external subtitles
+  // find external subtitles
+  const storage = await getStorageIndex();
   const pathObj = parse(path);
 
-  for (const item of await listFiles(pathObj.dir)) {
-    if (item.type === "file" && SubtitleExtensions.includes(item.ext) && parse(item.path).name === pathObj.name) {
+  // all external subtitles starting with the same name as the video are eligible
+  for (const item of storage.filterFiles(`${pathObj.dir}/${pathObj.name}`)) {
+    if (SubtitleExtensions.includes(item.ext)) {
       results.push({
         type: "external",
         language: `Unknown (${item.ext})`,
@@ -53,11 +55,11 @@ export async function getSubtitleList(path: string): Promise<SubtitleStreamInfo[
 }
 
 export function getEmbeddedSubtitleStream(path: string, format: SubtitleEncodeFormat, stream?: number) {
-  return ffmpeg(getStoragePath(path))
+  return ffmpeg(storagePathToAbsolute(path))
     .outputOption(typeof stream === "number" ? [`-map 0:s:${stream}`] : [])
     .format(format);
 }
 
 export function getSubtitleStream(path: string, format: SubtitleEncodeFormat) {
-  return ffmpeg(getStoragePath(path)).format(format);
+  return ffmpeg(storagePathToAbsolute(path)).format(format);
 }

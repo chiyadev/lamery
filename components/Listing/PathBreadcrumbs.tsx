@@ -4,7 +4,7 @@ import NextLink from "next/link";
 import { encodeURIPath } from "../../utils/http";
 
 const PathBreadcrumbs = ({ value }: { value: string }) => {
-  const parts = value === "/" ? [""] : value.split(/[\/\\]/g);
+  const parts = value === "/" ? [""] : value.split("/");
 
   return (
     <chakra.div minW={0} isTruncated>
@@ -13,7 +13,7 @@ const PathBreadcrumbs = ({ value }: { value: string }) => {
 
         return (
           <NextLink key={i} href={href} passHref>
-            <Link> {part} /</Link>
+            <Link>{part} / </Link>
           </NextLink>
         );
       })}

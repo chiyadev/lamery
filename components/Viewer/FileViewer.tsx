@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { FileItem } from "../../utils/storage";
+import { StorageFile } from "../../utils/storage";
 import ImageViewer from "./ImageViewer";
 import VideoViewer, { VideoViewerData } from "./VideoViewer";
 import DownloadFallback from "./DownloadFallback";
@@ -9,7 +9,7 @@ import AudioViewer from "./AudioViewer";
 
 export type ViewerData = TextViewerData | VideoViewerData;
 
-const FileViewer = ({ file, viewer }: { file: FileItem; viewer?: ViewerData }) => {
+const FileViewer = ({ file, viewer }: { file: StorageFile; viewer?: ViewerData }) => {
   switch (getFileType(file.ext)) {
     case "image":
       return <ImageViewer file={file} />;

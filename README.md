@@ -11,7 +11,7 @@ Developed for [lamery.chiya.dev](https://lamery.chiya.dev).
 - Supports range headers for video/audio streaming
 - Supports conditional GET headers for browser caching
 - In-browser video/audio player with embedded webvtt subtitle extraction support
-- Code file viewer with syntax highlighting support
+- Text and code viewer with syntax highlighting support
 - Basic statistics page with an overview of file types and sizes
 - Shows image and video previews when hovering on files
 - Provides quick search by building an in-memory filesystem index

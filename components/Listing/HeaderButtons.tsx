@@ -2,10 +2,10 @@ import React, { memo } from "react";
 import { Icon, IconButton, Tooltip } from "@chakra-ui/react";
 import { FaDownload, FaSearch } from "react-icons/fa";
 import { useRouter } from "next/router";
-import { DirectoryItem } from "../../utils/storage";
+import { StorageDirectory } from "../../utils/storage";
 import { encodeURIPath } from "../../utils/http";
 
-const HeaderButtons = ({ directory }: { directory: DirectoryItem }) => {
+const HeaderButtons = ({ directory }: { directory: StorageDirectory }) => {
   const router = useRouter();
 
   return (
@@ -31,7 +31,7 @@ const HeaderButtons = ({ directory }: { directory: DirectoryItem }) => {
             aria-label="Download"
             icon={<Icon as={FaDownload} />}
             variant="ghost"
-            href={`/api/archive${encodeURIPath(directory.path)}`}
+            href={`/api/archives${encodeURIPath(directory.path)}`}
           />
         </Tooltip>
       )}

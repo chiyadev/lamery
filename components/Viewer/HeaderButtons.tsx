@@ -1,10 +1,10 @@
 import React, { memo } from "react";
-import { FileItem } from "../../utils/storage";
+import { StorageFile } from "../../utils/storage";
 import { FaDownload } from "react-icons/fa";
 import { Icon, IconButton, Tooltip } from "@chakra-ui/react";
 import { encodeURIPath } from "../../utils/http";
 
-const HeaderButtons = ({ file }: { file: FileItem }) => {
+const HeaderButtons = ({ file }: { file: StorageFile }) => {
   return (
     <Tooltip label="Download">
       <IconButton
