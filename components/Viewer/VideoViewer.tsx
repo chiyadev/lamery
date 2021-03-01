@@ -3,6 +3,7 @@ import { memo, useEffect, useRef } from "react";
 import Plyr, { HTMLPlyrVideoElement } from "plyr-react";
 import { Router } from "next/router";
 import { SubtitleStreamInfo } from "../../utils/subtitle";
+import { encodeURIPath } from "../../utils/http";
 
 export type VideoViewerData = {
   type: "video";
@@ -73,16 +74,16 @@ const VideoViewer = ({ file, viewer }: { file: FileItem; viewer: VideoViewerData
         title: file.name.replace(/\.[^/.]+$/, ""),
         sources: [
           {
-            src: `/api/files${file.path}`,
+            src: `/api/files${encodeURIPath(file.path)}`,
           },
         ],
         tracks: viewer.subtitles.map((subtitle, i) => ({
           kind: "subtitles",
           src:
             subtitle.type === "external"
-              ? `/api/subtitles${subtitle.path}`
+              ? `/api/subtitles${encodeURIPath(subtitle.path)}`
               : subtitle.type === "embedded"
-              ? `/api/subtitles${file.path}?stream=${subtitle.stream}`
+              ? `/api/subtitles${encodeURIPath(file.path)}?stream=${subtitle.stream}`
               : "",
           label: subtitle.language,
           default: i === 0,

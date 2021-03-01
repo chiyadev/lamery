@@ -3,6 +3,7 @@ import { Icon, IconButton, Tooltip } from "@chakra-ui/react";
 import { FaDownload, FaSearch } from "react-icons/fa";
 import { useRouter } from "next/router";
 import { DirectoryItem } from "../../utils/storage";
+import { encodeURIPath } from "../../utils/http";
 
 const HeaderButtons = ({ directory }: { directory: DirectoryItem }) => {
   const router = useRouter();
@@ -15,10 +16,10 @@ const HeaderButtons = ({ directory }: { directory: DirectoryItem }) => {
           aria-label="Search"
           icon={<Icon as={FaSearch} />}
           variant="ghost"
-          href={`/search${directory.path}`}
+          href={`/search${encodeURIPath(directory.path)}`}
           onClick={async (e) => {
             e.preventDefault();
-            await router.push(`/search${directory.path}`);
+            await router.push(`/search${encodeURIPath(directory.path)}`);
           }}
         />
       </Tooltip>
@@ -30,7 +31,7 @@ const HeaderButtons = ({ directory }: { directory: DirectoryItem }) => {
             aria-label="Download"
             icon={<Icon as={FaDownload} />}
             variant="ghost"
-            href={`/api/archive${directory.path}`}
+            href={`/api/archive${encodeURIPath(directory.path)}`}
           />
         </Tooltip>
       )}

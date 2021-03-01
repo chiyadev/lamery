@@ -1,6 +1,7 @@
 import React, { memo, ReactNode } from "react";
 import Head from "next/head";
 import { chakra, Link, VStack } from "@chakra-ui/react";
+import NextLink from "next/link";
 
 const Layout = ({ children, title = [] }: { children?: ReactNode; title?: (string | undefined)[] }) => {
   return (
@@ -17,10 +18,20 @@ const Layout = ({ children, title = [] }: { children?: ReactNode; title?: (strin
         <chakra.div color="gray.500" fontSize="sm">
           <span>
             <span>powered by </span>
-            <Link href="https://github.com/chiyadev/lamery" isExternal color="blue.300">
+            <Link href="https://github.com/chiyadev/lamery" isExternal color="blue.500">
               lamery
             </Link>
           </span>
+
+          <span> · </span>
+          <NextLink href="/statistics" passHref>
+            <Link>statistics</Link>
+          </NextLink>
+
+          <span> · </span>
+          <NextLink href="/random" passHref>
+            <Link>random</Link>
+          </NextLink>
         </chakra.div>
       </VStack>
     </>

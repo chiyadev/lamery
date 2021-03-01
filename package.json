@@ -29,6 +29,7 @@
     "focus-visible": "^5.2.0",
     "framer-motion": "^3.7.0",
     "inter-ui": "^3.15.0",
+    "is-absolute-url": "^3.0.3",
     "iso-639-2": "^2.0.0",
     "mime-types": "^2.1.29",
     "minisearch": "^3.0.2",
@@ -45,7 +46,8 @@
     "react-syntax-highlighter": "^15.4.3",
     "remark-gfm": "^1.0.0",
     "sharp": "^0.27.2",
-    "tempy": "^1.0.0"
+    "tempy": "^1.0.0",
+    "use-error-boundary": "^2.0.4"
   },
   "devDependencies": {
     "@types/node": "^14.14.31",

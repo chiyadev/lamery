@@ -29,6 +29,8 @@ export function getFileType(ext: string): FileType {
     case ".json":
     case ".cfg":
     case ".config":
+    case ".htm":
+    case ".html":
     case ".ini":
     case ".info":
     case ".log":
@@ -181,6 +183,10 @@ export function getFileHighlighter(ext: string) {
 
     case ".ini":
       return "ini";
+
+    case ".htm":
+    case ".html":
+      return "html";
 
     case ".xml":
       return "xml";

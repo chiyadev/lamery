@@ -2,6 +2,7 @@ import React, { memo } from "react";
 import { FileItem } from "../../utils/storage";
 import { FaDownload } from "react-icons/fa";
 import { Icon, IconButton, Tooltip } from "@chakra-ui/react";
+import { encodeURIPath } from "../../utils/http";
 
 const HeaderButtons = ({ file }: { file: FileItem }) => {
   return (
@@ -11,7 +12,7 @@ const HeaderButtons = ({ file }: { file: FileItem }) => {
         aria-label="Download"
         icon={<Icon as={FaDownload} />}
         variant="ghost"
-        href={`/api/files${file.path}?attach=true`}
+        href={`/api/files${encodeURIPath(file.path)}?attach=true`}
       />
     </Tooltip>
   );

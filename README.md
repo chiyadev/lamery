@@ -2,8 +2,16 @@
 
 An experimental HTTP file server, successor to [lolistorage](https://github.com/chiyadev/lolistorage).
 
+Developed for [lamery.chiya.dev](https://lamery.chiya.dev).
+
 ## Features
 
 - Elegant and simple GitHub-like interface
-- Supports index files (readme.md, readme.txt) with GitHub-flavored markdown rendering
+- Supports index files (readme.md, index.txt, etc.) with GitHub-flavored markdown rendering
 - Supports range headers for video/audio streaming
+- Supports conditional GET headers for browser caching
+- In-browser video/audio player with embedded webvtt subtitle extraction support
+- Code file viewer with syntax highlighting support
+- Shows image and video previews when hovering on files
+- Provides quick search by building an in-memory filesystem index
+- Provides a download endpoint for directory archives

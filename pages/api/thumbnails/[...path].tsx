@@ -152,7 +152,7 @@ export default async (req: NextApiRequest, res: NextApiResponse<GetThumbnailResp
     res.statusCode = 200;
 
     res.setHeader("cache-control", "private, max-age=0, must-revalidate");
-    res.setHeader("content-type", "image/jpeg");
+    res.setHeader("content-type", `image/${formatStr}`);
     res.setHeader("content-length", cacheStats.size);
     res.setHeader("last-modified", lastModified);
     res.setHeader("etag", etag);

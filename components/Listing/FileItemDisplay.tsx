@@ -1,5 +1,5 @@
-import { HStack, Icon, Link } from "@chakra-ui/react";
-import React, { memo, useState } from "react";
+import { chakra, HStack, Icon, Link } from "@chakra-ui/react";
+import React, { memo, ReactNode, useState } from "react";
 import { FileItem } from "../../utils/storage";
 import {
   FaRegFile,
@@ -17,8 +17,9 @@ import {
 import NextLink from "next/link";
 import { FileType, getFileType } from "../../utils/file";
 import FileItemPreviewPopover from "./FileItemPreviewPopover";
+import { encodeURIPath } from "../../utils/http";
 
-function getIcon(type: FileType) {
+export function getFileIcon(type: FileType) {
   switch (type) {
     case "word":
       return FaRegFileWord;
@@ -55,24 +56,27 @@ function getIcon(type: FileType) {
   }
 }
 
-const FileItemDisplay = ({ file }: { file: FileItem }) => {
+const FileItemDisplay = ({ file, info }: { file: FileItem; info?: ReactNode }) => {
   const [preview, setPreview] = useState(false);
 
   return (
     <FileItemPreviewPopover visible={preview} file={file}>
       <HStack spacing={2}>
-        <Icon as={getIcon(getFileType(file.ext))} color="gray.500" />
+        <Icon as={getFileIcon(getFileType(file.ext))} color="gray.500" />
 
-        <NextLink href={`/files${file.path}`} passHref>
-          <Link
-            isTruncated
-            onMouseEnter={() => setPreview(true)}
-            onMouseMove={() => setPreview(true)}
-            onMouseLeave={() => setPreview(false)}
-          >
-            {file.name}
-          </Link>
-        </NextLink>
+        <chakra.div flex={1} isTruncated minW={0}>
+          <NextLink href={`/files${encodeURIPath(file.path)}`} passHref>
+            <Link
+              onMouseEnter={() => setPreview(true)}
+              onMouseMove={() => setPreview(true)}
+              onMouseLeave={() => setPreview(false)}
+            >
+              {file.name}
+            </Link>
+          </NextLink>
+        </chakra.div>
+
+        {info}
       </HStack>
     </FileItemPreviewPopover>
   );

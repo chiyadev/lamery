@@ -44,25 +44,28 @@ export async function generateVideoThumbnail(path: string, destination: string, 
   height *= scale;
 
   let ffFormat: string;
+  let quality: number;
 
   switch (format) {
     case "jpeg":
       ffFormat = "mjpeg";
+      quality = 31 * (1 - MaxThumbnailQuality / 100);
       break;
 
     case "webp":
       ffFormat = "webp";
+      quality = MaxThumbnailQuality;
       break;
   }
 
   await execFfmpeg(
     ffmpeg(getStoragePath(path))
-      .seekInput(duration / 2)
+      .seekInput(Math.min(duration / 2, 120)) // max 2 minutes
       .noAudio()
       .format(ffFormat)
       .output(destination)
       .outputOption("-map", "0:v:0")
-      .outputOption("-q", (10 - MaxThumbnailQuality / 10).toFixed(0))
+      .outputOption("-q", quality.toFixed())
       .frames(1)
       .size(`${Math.floor(width)}x${Math.floor(height)}`)
   );

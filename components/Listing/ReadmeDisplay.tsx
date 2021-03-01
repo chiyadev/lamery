@@ -1,12 +1,12 @@
 import React, { memo } from "react";
 import { FileItem } from "../../utils/storage";
 import CodeViewer, { TextViewerData } from "../Viewer/CodeViewer";
-import Markdown from "react-markdown";
-import RemarkGfm from "remark-gfm";
 import { chakra, HStack, Icon, Link, VStack } from "@chakra-ui/react";
 import styles from "./ReadmeDisplay.module.css";
 import NextLink from "next/link";
 import { FaRegFileAlt } from "react-icons/fa";
+import { encodeURIPath } from "../../utils/http";
+import Markdown from "../Markdown";
 
 const ReadmeDisplay = ({ file, viewer }: { file: FileItem; viewer: TextViewerData }) => {
   return (
@@ -14,14 +14,14 @@ const ReadmeDisplay = ({ file, viewer }: { file: FileItem; viewer: TextViewerDat
       <HStack spacing={2} color="gray.500" fontSize="sm">
         <Icon as={FaRegFileAlt} />
 
-        <NextLink href={`/files${file.path}`} passHref>
+        <NextLink href={`/files${encodeURIPath(file.path)}`} passHref>
           <Link>{file.name}</Link>
         </NextLink>
       </HStack>
 
       {file.ext === ".md" || file.ext === ".markdown" ? (
         <chakra.div className={styles["markdown-body"]} p={4}>
-          <Markdown plugins={[RemarkGfm]}>{viewer.content}</Markdown>
+          <Markdown basePath={file.path.substr(0, file.path.lastIndexOf("/"))}>{viewer.content}</Markdown>
         </chakra.div>
       ) : (
         <CodeViewer file={file} viewer={viewer} />

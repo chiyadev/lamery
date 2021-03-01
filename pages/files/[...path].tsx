@@ -15,6 +15,7 @@ import { MaxTextViewerSize } from "../../components/Viewer/CodeViewer";
 import FileInfoText from "../../components/Viewer/FileInfoText";
 import Header from "../../components/Header";
 import HeaderButtons from "../../components/Viewer/HeaderButtons";
+import { encodeURIPath } from "../../utils/http";
 
 type Props =
   | SuccessProps
@@ -129,25 +130,27 @@ const FilePage = (props: Props) => {
     default:
       return (
         <Layout title={["Not Found"]}>
-          {props.type === "notFound" ? (
-            <>
-              <Heading size="md">404 Not Found</Heading>
-              <div>Could not find the requested file.</div>
-              <Code>{props.path}</Code>
-            </>
-          ) : (
-            <>
-              <Heading size="md">500 Internal Server Error</Heading>
-              <div>Please try again later.</div>
-              <Code>{props.message}</Code>
-            </>
-          )}
+          <VStack align="start" spacing={4}>
+            {props.type === "notFound" ? (
+              <>
+                <Heading size="md">404 Not Found</Heading>
+                <div>Could not find the requested file.</div>
+                <Code>{props.path}</Code>
+              </>
+            ) : (
+              <>
+                <Heading size="md">500 Internal Server Error</Heading>
+                <div>Please try again later.</div>
+                <Code>{props.message}</Code>
+              </>
+            )}
 
-          <NextLink href={`/list${props.parent}`} passHref>
-            <Button as="a" size="sm" leftIcon={<Icon as={FaChevronLeft} />}>
-              Back
-            </Button>
-          </NextLink>
+            <NextLink href={`/list${encodeURIPath(props.parent)}`} passHref>
+              <Button as="a" size="sm" leftIcon={<Icon as={FaChevronLeft} />}>
+                Back
+              </Button>
+            </NextLink>
+          </VStack>
         </Layout>
       );
   }
@@ -157,24 +160,24 @@ const Content = ({ file, parent, viewer }: SuccessProps) => {
   return (
     <Layout title={[file.name]}>
       <Header buttons={<HeaderButtons file={file} />}>
-        <VStack align="start" spacing={2}>
+        <VStack align="stretch" spacing={0}>
           <chakra.div fontSize="sm" color="gray.500">
             <PathBreadcrumbs value={parent} />
           </chakra.div>
 
-          <Heading size="md">
-            <Link href={`/api/files${file.path}`} isExternal>
+          <Heading size="md" isTruncated>
+            <Link href={`/api/files${encodeURIPath(file.path)}`} isExternal>
               {file.name}
             </Link>
           </Heading>
         </VStack>
       </Header>
 
-      <div>
+      <FileInfoText file={file} />
+
+      <div key={file.path}>
         <FileViewer file={file} viewer={viewer || undefined} />
       </div>
-
-      <FileInfoText file={file} />
     </Layout>
   );
 };

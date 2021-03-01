@@ -1,7 +1,7 @@
 import { GetServerSideProps } from "next";
 import React, { memo } from "react";
 import Layout from "../../components/Layout";
-import { getStorageIndexes } from "../../utils/storageSearch";
+import { getStorageIndex } from "../../utils/storageSearch";
 import GroupDisplay, { GroupDisplayData } from "../../components/Search/GroupDisplay";
 import { chakra, Heading, Link, VStack } from "@chakra-ui/react";
 import { compare } from "natural-orderby";
@@ -13,6 +13,7 @@ import { parse } from "path";
 import { DirectoryItem } from "../../utils/storage";
 import NextLink from "next/link";
 import HeaderButtons from "../../components/Listing/HeaderButtons";
+import { encodeURIPath } from "../../utils/http";
 
 type Props = {
   directory: DirectoryItem;
@@ -23,7 +24,7 @@ type Props = {
   results: GroupDisplayData[];
 };
 
-const maxResults = 1000;
+export const MaxSearchResults = 1000;
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ query: { query, path } }) => {
   const pathStr = `/${(Array.isArray(path) ? path.join("/") : path) || ""}`;
@@ -31,7 +32,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query: { q
   const queryStr = (Array.isArray(query) ? query[0] : query) || "";
   const start = performance.now();
 
-  const index = await getStorageIndexes();
+  const index = await getStorageIndex();
   const { matches } = await index.search(queryStr, {
     prefix: true,
     fuzzy: 1 / 3,
@@ -41,7 +42,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query: { q
   const groups = new Map<string, GroupDisplayData>();
   let total = 0;
 
-  for (const { doc } of matches) {
+  for (const { doc, score } of matches) {
     if (doc.path === pathStr || !doc.path.startsWith(pathStr)) {
       continue;
     }
@@ -57,11 +58,14 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query: { q
           path: groupPath,
           name: parse(groupPath).base,
           items: [],
+          score: 0,
         })
       );
     }
 
     group.items.push(doc);
+    group.score += score;
+
     total++;
   }
 
@@ -69,8 +73,16 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query: { q
   let filtered = 0;
 
   const results = Array.from(groups.values())
-    .sort((a, b) => comparer(a.path, b.path))
-    .filter(({ items }, i) => !i || (filtered += items.length) <= maxResults);
+    .sort((a, b) => {
+      const depth = a.path.split("/").length - b.path.split("/").length;
+      if (depth) return depth;
+
+      const score = b.score / b.items.length - a.score / a.items.length;
+      if (score) return score;
+
+      return comparer(a.path, b.path);
+    })
+    .filter(({ items }, i) => !i || (filtered += items.length) <= MaxSearchResults);
 
   for (const group of results) {
     group.items.sort((a, b) => {
@@ -101,15 +113,15 @@ const SearchPage = ({ directory, parent, query, total, elapsed, results }: Props
   return (
     <Layout title={[query || "Search"]}>
       <Header buttons={<HeaderButtons directory={directory} />}>
-        <VStack align="start" spacing={2}>
+        <VStack align="stretch" spacing={0}>
           {directory.name && (
             <chakra.div fontSize="sm" color="gray.500">
               <PathBreadcrumbs value={parent} />
             </chakra.div>
           )}
 
-          <Heading size="md">
-            <NextLink href={`/list${directory.path}`} passHref>
+          <Heading size="md" isTruncated>
+            <NextLink href={`/list${encodeURIPath(directory.path)}`} passHref>
               <Link>{directory.name || "/"}</Link>
             </NextLink>
           </Heading>

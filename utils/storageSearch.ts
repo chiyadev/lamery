@@ -66,6 +66,6 @@ const promise = new Promise<MemorySearch<StorageItem>>((resolve) => {
     .on("unlinkDir", deleteEntry);
 });
 
-export function getStorageIndexes() {
+export function getStorageIndex() {
   return promise;
 }

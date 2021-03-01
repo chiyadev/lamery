@@ -2,6 +2,7 @@ import { FileItem } from "../../utils/storage";
 import { memo, useEffect, useRef } from "react";
 import Plyr, { HTMLPlyrVideoElement } from "plyr-react";
 import { Router } from "next/router";
+import { encodeURIPath } from "../../utils/http";
 
 const AudioViewer = ({ file }: { file: FileItem }) => {
   const ref = useRef<HTMLPlyrVideoElement>(null);
@@ -27,7 +28,7 @@ const AudioViewer = ({ file }: { file: FileItem }) => {
         title: file.name.replace(/\.[^/.]+$/, ""),
         sources: [
           {
-            src: `/api/files${file.path}`,
+            src: `/api/files${encodeURIPath(file.path)}`,
           },
         ],
       }}

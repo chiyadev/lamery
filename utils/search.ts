@@ -73,7 +73,7 @@ export class MemorySearch<T extends Record<string, any>> {
 
     return {
       elapsed: performance.now() - start,
-      matches,
+      matches: matches.sort((a, b) => b.score - a.score),
     };
   }
 }
