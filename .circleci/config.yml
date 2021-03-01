@@ -5,13 +5,14 @@ executors:
     machine: true
     environment:
       DOCKER_IMAGE: r.chiya.dev/lamery
+      NEXT_PUBLIC_UMAMI_URL: https://a.chiya.dev/5137470b-7299-4e52-b511-8328e11a5589
 
 jobs:
   deploy:
     executor: default
     steps:
       - checkout
-      - run: docker build -t $DOCKER_IMAGE -f Dockerfile .
+      - run: docker build -t $DOCKER_IMAGE -f Dockerfile --build-arg NEXT_PUBLIC_UMAMI_URL .
       - run: echo "$DOCKER_PASSWORD" | docker login $DOCKER_REGISTRY -u "$DOCKER_USERNAME" --password-stdin
       - run: docker push $DOCKER_IMAGE
 

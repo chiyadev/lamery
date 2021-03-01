@@ -20,19 +20,21 @@ const GroupDisplay = ({ group, searchPath }: { group: GroupDisplayData; searchPa
   return (
     <ListingContainer
       header={
-        <VStack align="start" spacing={0}>
-          {group.name && group.parent !== searchPath && (
-            <chakra.div fontSize="xs" color="gray.500">
-              <PathBreadcrumbs value={group.parent} />
-            </chakra.div>
-          )}
+        group.path !== searchPath && (
+          <VStack align="start" spacing={0}>
+            {group.name && group.parent !== searchPath && (
+              <chakra.div fontSize="xs" color="gray.500">
+                <PathBreadcrumbs value={group.parent} />
+              </chakra.div>
+            )}
 
-          <Heading size="sm">
-            <NextLink href={`/list${encodeURIPath(group.path)}`} passHref>
-              <Link>{group.name || "/"}</Link>
-            </NextLink>
-          </Heading>
-        </VStack>
+            <Heading size="sm">
+              <NextLink href={`/list${encodeURIPath(group.path)}`} passHref>
+                <Link>{group.name || "/"}</Link>
+              </NextLink>
+            </Heading>
+          </VStack>
+        )
       }
     >
       {group.items.map((item) => {

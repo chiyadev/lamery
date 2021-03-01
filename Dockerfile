@@ -6,7 +6,10 @@ RUN yarn install --production --frozen-lockfile
 RUN cp -R ./node_modules /tmp/node_modules
 RUN yarn install --frozen-lockfile
 
+ARG NEXT_PUBLIC_APP_NAME
 ARG NEXT_PUBLIC_UMAMI_URL
+
+ENV NEXT_PUBLIC_UMAMI_URL $NEXT_PUBLIC_APP_NAME
 ENV NEXT_PUBLIC_UMAMI_URL $NEXT_PUBLIC_UMAMI_URL
 
 COPY . ./
