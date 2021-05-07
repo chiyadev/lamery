@@ -19,9 +19,9 @@ const FileItemPreviewPopover = ({
     case "image":
     case "video":
       return (
-        <Popover isOpen={visible && loaded} trigger="hover" placement="bottom-start" isLazy={!visible}>
+        <Popover isOpen={visible && loaded} trigger="hover" placement="bottom-start" isLazy={!visible && !loaded}>
           <PopoverTrigger>{children}</PopoverTrigger>
-          <PopoverContent overflow="hidden" d="inline-block">
+          <PopoverContent w="auto">
             <picture>
               <source type="image/webp" srcSet={`/api/thumbnails${encodeURIPath(file.path)}?format=webp`} />
 
@@ -32,7 +32,7 @@ const FileItemPreviewPopover = ({
                   }
                 }}
                 alt={file.name}
-                src={`/api/thumbnails${encodeURIPath(file.path)}`}
+                src={`/api/thumbnails${encodeURIPath(file.path)}?format=jpeg`}
                 maxH="xs"
               />
             </picture>

@@ -11,15 +11,21 @@ const Markdown = ({
   basePath = "",
   transformLinkUri,
   transformImageUri,
-  renderers,
+  components,
   ...props
 }: ComponentProps<typeof MarkdownCore> & { basePath?: string }) => {
+  if (basePath === "/") {
+    basePath = "";
+  } else if (!basePath?.startsWith("/")) {
+    basePath = "/" + basePath;
+  }
+
   return (
     <MarkdownCore
       plugins={[RemarkGfm]}
-      transformLinkUri={(uri) => {
+      transformLinkUri={(uri, children, title) => {
         if (transformLinkUri) {
-          return transformLinkUri(uri);
+          return transformLinkUri(uri, children, title);
         }
 
         if (isAbsoluteUrl(uri)) {
@@ -32,9 +38,9 @@ const Markdown = ({
 
         return "/list" + uri;
       }}
-      transformImageUri={(uri) => {
+      transformImageUri={(uri, children, title) => {
         if (transformImageUri) {
-          return transformImageUri(uri);
+          return transformImageUri(uri, children, title);
         }
 
         if (isAbsoluteUrl(uri)) {
@@ -47,10 +53,11 @@ const Markdown = ({
 
         return "/api/files" + uri;
       }}
-      renderers={{
-        code: ({ language, value }) => {
+      components={{
+        code: ({ key, language, children }: any) => {
           return (
             <SyntaxHighlighter
+              key={key}
               style={ghcolors}
               language={language}
               customStyle={{
@@ -60,11 +67,12 @@ const Markdown = ({
                 margin: undefined,
               }}
               wrapLongLines
-              children={value}
-            />
+            >
+              {children}
+            </SyntaxHighlighter>
           );
         },
-        link: ({ href, children }) => {
+        a: ({ href, children }: any) => {
           if (isAbsoluteUrl(href)) {
             return <a href={href}>{children}</a>;
           } else {
@@ -75,7 +83,7 @@ const Markdown = ({
             );
           }
         },
-        ...renderers,
+        ...components,
       }}
       {...props}
     />

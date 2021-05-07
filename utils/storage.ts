@@ -142,7 +142,10 @@ const indexPromise = new Promise<StorageIndex>((resolve) => {
   const index = new StorageIndex();
 
   const watcher = watch(StorageBasePath, {
+    ignored: /(^|[\/\\])\../, // ignore dotfiles
     persistent: true,
+    awaitWriteFinish: true,
+    ignorePermissionErrors: true,
   });
 
   const indexFile = async (path: string, stats?: Stats) => {
