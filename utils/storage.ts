@@ -184,8 +184,14 @@ const indexPromise = new Promise<StorageIndex>((resolve) => {
   };
 
   const reindexFile = async (path: string, stats?: Stats) => {
-    deleteFile(path);
-    await indexFile(path, stats);
+    try {
+      stats = stats || (await stat(path));
+
+      deleteFile(path);
+      await indexFile(path, stats);
+    } catch {
+      // ignored
+    }
   };
 
   const indexDirectory = async (path: string, stats?: Stats) => {
