@@ -1,9 +1,17 @@
-import React, { memo, ReactNode } from "react";
+import React, { Fragment, memo, ReactNode } from "react";
 import Head from "next/head";
 import { chakra, Link, VStack } from "@chakra-ui/react";
 import NextLink from "next/link";
 
-const Layout = ({ children, title = [] }: { children?: ReactNode; title?: (string | undefined)[] }) => {
+const Layout = ({
+  children,
+  title = [],
+  footer,
+}: {
+  children?: ReactNode;
+  title?: (string | undefined)[];
+  footer?: ReactNode[];
+}) => {
   return (
     <>
       <Head>
@@ -32,6 +40,16 @@ const Layout = ({ children, title = [] }: { children?: ReactNode; title?: (strin
           <NextLink href="/random" passHref>
             <Link>random</Link>
           </NextLink>
+
+          {footer?.map(
+            (node, i) =>
+              node && (
+                <Fragment key={i}>
+                  <span> · </span>
+                  {node}
+                </Fragment>
+              )
+          )}
         </chakra.div>
       </VStack>
     </>

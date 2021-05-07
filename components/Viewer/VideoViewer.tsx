@@ -1,7 +1,7 @@
 import { StorageFile } from "../../utils/storage";
 import { memo, useEffect, useRef } from "react";
 import Plyr, { HTMLPlyrVideoElement } from "plyr-react";
-import { Router } from "next/router";
+import { Router, useRouter } from "next/router";
 import { SubtitleInfo } from "../../utils/subtitle";
 import { encodeURIPath } from "../../utils/http";
 
@@ -10,16 +10,19 @@ export type VideoViewerData = {
   subtitles: SubtitleInfo[];
 };
 
-type PlayerState = Partial<{
-  time: number;
-  track: number;
-}>;
+type PlayerState = {
+  currentTime: number;
+  currentTrack: number;
+};
 
 function getPlayerState(key: string): PlayerState {
   try {
     return JSON.parse(window.localStorage.getItem(`plyr_state_${key}`) || "");
   } catch {
-    return {};
+    return {
+      currentTime: 0,
+      currentTrack: 0,
+    };
   }
 }
 
@@ -27,8 +30,17 @@ function setPlayerState(key: string, state: PlayerState) {
   window.localStorage.setItem(`plyr_state_${key}`, JSON.stringify(state));
 }
 
-const VideoViewer = ({ file, viewer }: { file: StorageFile; viewer: VideoViewerData }) => {
+const VideoViewer = ({
+  file,
+  viewer,
+  autoplay,
+}: {
+  file: StorageFile;
+  viewer: VideoViewerData;
+  autoplay?: StorageFile;
+}) => {
   const ref = useRef<HTMLPlyrVideoElement>(null);
+  const { push } = useRouter();
 
   useEffect(() => {
     const plyr = ref.current?.plyr;
@@ -36,38 +48,36 @@ const VideoViewer = ({ file, viewer }: { file: StorageFile; viewer: VideoViewerD
 
     const stateKey = `${file.mtime}_${file.path.replace("/", "_")}`;
 
-    plyr.once("playing", () => {
-      const state = getPlayerState(stateKey);
-
-      if (typeof state.time === "number") {
-        plyr.currentTime = state.time;
-      }
-
-      if (typeof state.track === "number") {
-        plyr.currentTrack = state.track;
-      } else {
-        plyr.currentTrack = viewer.subtitles.length ? 0 : -1;
-      }
+    plyr.on("loadedmetadata", () => {
+      ({ currentTime: plyr.currentTime, currentTrack: plyr.currentTrack } = getPlayerState(stateKey));
     });
 
-    plyr.on("pause", () => {
+    plyr.on("timeupdate", () => {
       setPlayerState(stateKey, {
-        time: plyr.currentTime,
-        track: plyr.currentTrack,
+        currentTime: plyr.currentTime >= plyr.duration - 5 ? 0 : plyr.currentTime,
+        currentTrack: plyr.currentTrack,
       });
     });
 
-    const handleRouteStart = () => plyr.pause();
+    if (autoplay) {
+      plyr.on("ended", () => {
+        push(`/files${encodeURIPath(autoplay.path)}`).catch();
+      });
+    }
+
+    const handleRouteStart = plyr.pause.bind(plyr);
 
     Router.events.on("routeChangeStart", handleRouteStart);
 
     return () => {
       Router.events.off("routeChangeStart", handleRouteStart);
+      plyr.destroy();
     };
   }, []);
 
   return (
     <Plyr
+      key="plyr"
       ref={ref}
       source={{
         type: "video",
@@ -85,7 +95,8 @@ const VideoViewer = ({ file, viewer }: { file: StorageFile; viewer: VideoViewerD
               : subtitle.type === "embedded"
               ? `/api/subtitles${encodeURIPath(file.path)}?stream=${subtitle.stream}`
               : "",
-          label: subtitle.language,
+          srcLang: subtitle.lang,
+          label: subtitle.langName || "Unknown",
           default: i === 0,
         })),
       }}
@@ -94,6 +105,9 @@ const VideoViewer = ({ file, viewer }: { file: StorageFile; viewer: VideoViewerD
         disableContextMenu: false,
         fullscreen: {
           iosNative: true,
+        },
+        keyboard: {
+          global: true,
         },
       }}
     />

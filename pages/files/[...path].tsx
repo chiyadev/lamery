@@ -3,10 +3,10 @@ import { GetServerSideProps } from "next";
 import { getStorageIndex, normalizePath, StorageFile } from "../../utils/storage";
 import { parse } from "path";
 import React from "react";
-import { Button, chakra, Code, Heading, Icon, Link, VStack } from "@chakra-ui/react";
+import { Button, ButtonGroup, chakra, Code, Heading, Icon, Link, VStack } from "@chakra-ui/react";
 import PathBreadcrumbs from "../../components/Listing/PathBreadcrumbs";
 import FileViewer, { ViewerData } from "../../components/Viewer/FileViewer";
-import { FaChevronLeft } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import NextLink from "next/link";
 import { getFileType } from "../../utils/file";
 import { getSubtitleList } from "../../utils/subtitle";
@@ -15,6 +15,8 @@ import FileInfoText from "../../components/Viewer/FileInfoText";
 import Header from "../../components/Header";
 import HeaderButtons from "../../components/Viewer/HeaderButtons";
 import { encodeURIPath } from "../../utils/http";
+import { compare } from "natural-orderby";
+import LinkTooltipButton from "../../components/LinkTooltipButton";
 
 type Props =
   | SuccessProps
@@ -32,6 +34,8 @@ type Props =
 type SuccessProps = {
   type: "success";
   file: StorageFile;
+  previous: StorageFile | null;
+  next: StorageFile | null;
   viewer: ViewerData | null;
 };
 
@@ -43,6 +47,15 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query: { p
   let viewer: SuccessProps["viewer"] = null;
 
   if (!file) {
+    if (storage.getDirectory(pathStr)) {
+      return {
+        redirect: {
+          permanent: false,
+          destination: `/list${encodeURIPath(pathStr)}`,
+        },
+      };
+    }
+
     res.statusCode = 404;
 
     return {
@@ -101,10 +114,24 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query: { p
     }
   }
 
+  const comparer = compare();
+  const siblings = storage.filterFiles(file.parent + "/").sort((a, b) => {
+    const type = a.type.localeCompare(b.type);
+    if (type) return type;
+
+    return comparer(a.name, b.name);
+  });
+
+  const index = siblings.indexOf(file);
+  const previous = siblings[index - 1] || null;
+  const next = siblings[index + 1] || null;
+
   return {
     props: {
       type: "success",
       file,
+      previous,
+      next,
       viewer,
     },
   };
@@ -144,7 +171,7 @@ const FilePage = (props: Props) => {
   }
 };
 
-const Content = ({ file, viewer }: SuccessProps) => {
+const Content = ({ file, previous, next, viewer }: SuccessProps) => {
   return (
     <Layout title={[file.name]}>
       <Header buttons={<HeaderButtons file={file} />}>
@@ -164,8 +191,33 @@ const Content = ({ file, viewer }: SuccessProps) => {
       <FileInfoText file={file} />
 
       <div key={file.path}>
-        <FileViewer file={file} viewer={viewer || undefined} />
+        <FileViewer file={file} viewer={viewer || undefined} next={next || undefined} />
       </div>
+
+      <ButtonGroup isAttached>
+        <LinkTooltipButton
+          href={previous ? `/files${encodeURIPath(previous.path)}` : undefined}
+          label={previous?.name}
+          tooltip={{ placement: "bottom-start" }}
+          size="sm"
+          leftIcon={<Icon as={FaChevronLeft} />}
+          isDisabled={!previous}
+        >
+          Previous
+        </LinkTooltipButton>
+
+        <LinkTooltipButton
+          href={next ? `/files${encodeURIPath(next.path)}` : undefined}
+          label={next?.name}
+          tooltip={{ placement: "bottom-start" }}
+          size="sm"
+          rightIcon={<Icon as={FaChevronRight} />}
+          isDisabled={!next}
+          colorScheme="blue"
+        >
+          Next
+        </LinkTooltipButton>
+      </ButtonGroup>
     </Layout>
   );
 };

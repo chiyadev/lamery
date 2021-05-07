@@ -1,22 +1,30 @@
 import { StorageFile } from "../../utils/storage";
 import { memo, useEffect, useRef } from "react";
 import Plyr, { HTMLPlyrVideoElement } from "plyr-react";
-import { Router } from "next/router";
+import { Router, useRouter } from "next/router";
 import { encodeURIPath } from "../../utils/http";
 
-const AudioViewer = ({ file }: { file: StorageFile }) => {
+const AudioViewer = ({ file, autoplay }: { file: StorageFile; autoplay?: StorageFile }) => {
   const ref = useRef<HTMLPlyrVideoElement>(null);
+  const { push } = useRouter();
 
   useEffect(() => {
     const plyr = ref.current?.plyr;
     if (!plyr) return;
 
-    const handleRouteStart = () => plyr.pause();
+    if (autoplay) {
+      plyr.on("ended", () => {
+        push(`/files${encodeURIPath(autoplay.path)}`).catch();
+      });
+    }
+
+    const handleRouteStart = plyr.pause.bind(plyr);
 
     Router.events.on("routeChangeStart", handleRouteStart);
 
     return () => {
       Router.events.off("routeChangeStart", handleRouteStart);
+      plyr.destroy();
     };
   }, [file]);
 
@@ -35,6 +43,9 @@ const AudioViewer = ({ file }: { file: StorageFile }) => {
       options={{
         autoplay: true,
         disableContextMenu: false,
+        keyboard: {
+          global: true,
+        },
       }}
     />
   );

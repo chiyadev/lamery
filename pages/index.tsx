@@ -5,8 +5,8 @@ export const getServerSideProps: GetServerSideProps = async () => {
   return {
     redirect: {
       permanent: false,
-      destination: "/list"
-    }
+      destination: "/list",
+    },
   };
 };
 

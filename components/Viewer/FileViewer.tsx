@@ -9,17 +9,17 @@ import AudioViewer from "./AudioViewer";
 
 export type ViewerData = TextViewerData | VideoViewerData;
 
-const FileViewer = ({ file, viewer }: { file: StorageFile; viewer?: ViewerData }) => {
+const FileViewer = ({ file, viewer, next }: { file: StorageFile; viewer?: ViewerData; next?: StorageFile }) => {
   switch (getFileType(file.ext)) {
     case "image":
       return <ImageViewer file={file} />;
 
     case "audio":
-      return <AudioViewer file={file} />;
+      return <AudioViewer file={file} autoplay={next} />;
 
     case "video":
       if (viewer?.type === "video") {
-        return <VideoViewer file={file} viewer={viewer} />;
+        return <VideoViewer file={file} viewer={viewer} autoplay={next} />;
       }
 
       break;

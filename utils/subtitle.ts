@@ -10,12 +10,14 @@ export type SubtitleEncodeFormat = "webvtt";
 export type SubtitleInfo =
   | {
       type: "embedded";
-      language: string;
+      lang?: string;
+      langName?: string;
       stream: number;
     }
   | {
       type: "external";
-      language: string;
+      lang?: string;
+      langName?: string;
       path: string;
     };
 
@@ -28,9 +30,12 @@ export async function getSubtitleList(path: string): Promise<SubtitleInfo[]> {
 
   for (const stream of streams) {
     if (stream.codec_type === "subtitle") {
+      const lang = stream.tags?.language;
+
       results.push({
         type: "embedded",
-        language: iso6392Map[stream.tags?.language] || "Unknown",
+        lang,
+        langName: iso6392Map[lang],
         stream: streamId++,
       });
     }
@@ -43,9 +48,12 @@ export async function getSubtitleList(path: string): Promise<SubtitleInfo[]> {
   // all external subtitles starting with the same name as the video are eligible
   for (const item of storage.filterFiles(`${pathObj.dir}/${pathObj.name}`)) {
     if (SubtitleExtensions.includes(item.ext)) {
+      const lang = inferLangFromFile(item);
+
       results.push({
         type: "external",
-        language: `${inferLangFromFile(item) || "Unknown"} (${item.ext})`,
+        lang,
+        langName: iso6391Map[lang],
         path: item.path,
       });
     }
@@ -56,9 +64,7 @@ export async function getSubtitleList(path: string): Promise<SubtitleInfo[]> {
 
 function inferLangFromFile(file: StorageFile) {
   const name = file.name.substr(0, file.name.length - file.ext.length);
-  const lang = parse(name).ext.substr(1); // [video name].[lang].(vtt/ssa/etc)
-
-  return iso6391Map[lang] || iso6392Map[lang];
+  return parse(name).ext.substr(1); // [video name].[lang].(vtt/ssa/etc)
 }
 
 export function getEmbeddedSubtitleStream(path: string, format: SubtitleEncodeFormat, stream?: number) {

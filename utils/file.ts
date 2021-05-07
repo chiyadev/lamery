@@ -84,6 +84,7 @@ export function getFileType(ext: string): FileType {
     case ".tif":
     case ".tiff":
     case ".bmp":
+    case ".heic":
     case ".heif":
     case ".svg":
     case ".eps":
