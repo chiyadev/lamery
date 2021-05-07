@@ -1,6 +1,6 @@
-import { getStorageIndex, storagePathToAbsolute } from "./storage";
+import { getStorageIndex, StorageFile, storagePathToAbsolute } from "./storage";
 import { ffprobeAsync } from "./ffmpeg";
-import { iso6392Map } from "./language";
+import { iso6391Map, iso6392Map } from "./language";
 import ffmpeg from "fluent-ffmpeg";
 import { parse } from "path";
 
@@ -45,13 +45,20 @@ export async function getSubtitleList(path: string): Promise<SubtitleInfo[]> {
     if (SubtitleExtensions.includes(item.ext)) {
       results.push({
         type: "external",
-        language: `Unknown (${item.ext})`,
+        language: `${inferLangFromFile(item) || "Unknown"} (${item.ext})`,
         path: item.path,
       });
     }
   }
 
   return results;
+}
+
+function inferLangFromFile(file: StorageFile) {
+  const name = file.name.substr(0, file.name.length - file.ext.length);
+  const lang = parse(name).ext.substr(1); // [video name].[lang].(vtt/ssa/etc)
+
+  return iso6391Map[lang] || iso6392Map[lang];
 }
 
 export function getEmbeddedSubtitleStream(path: string, format: SubtitleEncodeFormat, stream?: number) {
