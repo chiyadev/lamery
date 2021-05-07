@@ -21,7 +21,7 @@ const FileItemPreviewPopover = ({
       return (
         <Popover isOpen={visible && loaded} trigger="hover" placement="bottom-start" isLazy={!visible && !loaded}>
           <PopoverTrigger>{children}</PopoverTrigger>
-          <PopoverContent w="auto">
+          <PopoverContent overflow="hidden" w="auto">
             <picture>
               <source type="image/webp" srcSet={`/api/thumbnails${encodeURIPath(file.path)}?format=webp`} />
 

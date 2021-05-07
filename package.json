@@ -24,7 +24,7 @@
     "chokidar": "^3.5.1",
     "fluent-ffmpeg": "^2.1.2",
     "focus-visible": "^5.2.0",
-    "framer-motion": "^4.1.13",
+    "framer-motion": "^3.0.0",
     "inter-ui": "^3.18.1",
     "is-absolute-url": "^3.0.3",
     "iso-639-2": "2.0.0",
