@@ -80,7 +80,7 @@ export default async (req: NextApiRequest, res: NextApiResponse<GetArchiveRespon
   try {
     res.setHeader("cache-control", "private, no-store");
     res.setHeader("content-type", "application/zip");
-    res.setHeader("content-disposition", "attachment");
+    res.setHeader("content-disposition", `attachment; filename*=UTF-8''${entry.name}.zip`);
 
     await Promise.all([archive.finalize(), pipeAsync(archive, res)]);
   } catch (e) {
